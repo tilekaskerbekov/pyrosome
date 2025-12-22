@@ -73,12 +73,12 @@ Instance depth_analysis : analysis string string (option positive) :=
   weighted_depth_analysis (fun a => Some 1).
 
 (*TODO: generalize what rules to run *)
-Theorem egraph_sound rebuild_fuel fuel l (c : ctx string) t (e1 e2 : term string)
+Theorem egraph_sound rebuild_fuel fuel l filter (c : ctx string) t (e1 e2 : term string)
   : wf_lang l ->
     wf_ctx (Model:=core_model l) c ->
     wf_term l c e1 t ->
     wf_term l c e2 t ->
-    fst (fst (fst (fst (egraph_equal' l rebuild_fuel fuel c e1 e2 t)))) = true->
+    fst (fst (fst (fst (egraph_equal' l filter rebuild_fuel fuel c e1 e2 t)))) = true->
     eq_term l c t e1 e2.
 Admitted.
 
@@ -87,7 +87,7 @@ Ltac egraph rule_transform n :=
         |- eq_term ?l ?c ?t ?e1 ?e2 =>
           let l' := constr:(ctx_to_rules c ++ l) in
           let rs := constr:(StringInstantiation.build_rule_set
-                              (rule_transform l') l') in
+                              1000 (rule_transform l') l') in
         let result := (eval vm_compute in
                         (StringInstantiation.egraph_equal (*V:=string*) l' rs n c e1 e2 t)) in
         lazymatch result with
@@ -145,6 +145,9 @@ Definition add_ctx weight l :=
 
 Definition add_open_term weight l :=
   add_open_term (V:= string) (V_map := string_trie_map) string_succ "@sort_of" l (H:=weighted_depth_analysis weight) true.
+
+Definition add_open_sort weight l :=
+  add_open_sort (V:= string) (V_map := string_trie_map) string_succ "@sort_of" l (H:=weighted_depth_analysis weight) true.
 
 Definition rebuild weight fuel : state instance _ := (rebuild (idx:=string) fuel (symbol:=string) (H:=weighted_depth_analysis weight)).
 
